@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <meta http-equiv="content-type" content="text/html;charset=UTF-8"/>
+        <title>TextGrid SADE Publish</title>
+        <script src="resources/js/jquery-1.6.4.min.js"/>
+        <script src="resources/js/dnd.js"/>
+        <link rel="stylesheet" href="resources/css/dnd.css"/>
+    </head>
+    <body>
+        <h2>Publish TextGrid Objects to SADE <img src="resources/img/help.gif" onclick="$('#help').toggle();"/>
+        </h2>
+<!--form action="services/rest" method="GET">
+    sid: <input type="text" name="sid" /> <br/>
+    uri: <input type="text" name="uri" /> <br/>
+    <input type="submit" />
+</form-->
+<!--img src="img/TextGrid-Logo.png" /-->
+        <img id="ajaxLoadIndicator" src="resources/img/ajax-loader3.gif" style="float:right"/>
+        <ul id="droptarget">
+            <span id="note">
+                <br/>Drop your Objects here or use the content menu entry "Publish to SADE" on TextGridObject in Navigator</span>
+        </ul>
+        <div style="text-align:right">
+<!--button onclick="test()" onmouseover="//$(this).show()" onmouseout="//$(this).hide()">test</button-->
+            <button onclick="reset()" class="imgButton">Reset <img src="resources/img/reload.png"/>
+            </button>
+            <button onclick="publish()" class="imgButton">Publish <img src="resources/img/publiziere-Objekt32x32.png"/>
+            </button>
+        </div>
+        <div id="logbox">
+            <img style="float:right;" src="resources/img/remove_grey.gif" alt="remove" onclick="$('#logbox').hide(); $('#log').empty();" onmouseover="this.src='resources/img/remove.gif'" onmouseout="this.src='img/remove_grey.gif'"/>
+            <div id="log"/>
+            <button style="float:right;" onclick="$('#logbox').hide(); $('#log').empty();">Close</button>
+        </div>
+        <div id="help">
+            <img style="float:right;" src="resources/img/remove_grey.gif" alt="remove" onclick="$('#help').hide();" onmouseover="this.src='resources/img/remove.gif'" onmouseout="this.src='img/remove_grey.gif'"/>
+            <h3>Help</h3>
+	Some Help Text Here...
+	<ul>
+                <li>Uri and content Type is shown on mouseover</li>
+                <li>reset resets form</li>
+            </ul>
+        </div>
+    </body>
+</html>

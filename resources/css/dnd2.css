@@ -1,0 +1,65 @@
+body {
+  padding-top: 80px;
+}
+.starter-template {
+  padding: 40px 15px;
+  text-align: center;
+}
+
+#droptarget{
+    height:350px; 
+    overflow: auto;
+}
+
+#log {
+    height: 80px;
+    overflow: auto;
+}
+
+.mime {
+	margin:0;
+	padding:5px 0 0 20px;
+	list-style:none;
+}
+
+.mime_aggregation {
+	background:url('../img/mime_aggregation.gif') no-repeat 0 8px;
+}
+
+.mime_edition {
+	background:url('../img/mime_edition.gif') no-repeat 0 8px;
+}
+
+.mime_collection {
+	background:url('../img/mime_collection.gif') no-repeat 0 8px;
+}
+
+.mime_work {
+	background:url('../img/mime_work.gif') no-repeat 0 8px;
+}
+
+.mime_xml {
+	background:url('../img/mime_xml.gif') no-repeat 0 8px;
+}
+
+.mime_tble {
+	background:url('../img/mime_tble.gif') no-repeat 0 8px;
+}
+
+.mime_image {
+	background:url('../img/mime_image.gif') no-repeat 0 8px;
+}
+
+.mime_unknown {
+	background:url('../img/mime_unknown.gif') no-repeat 0 8px;
+}
+
+
+.blink {
+  background-color: #FF0;
+  -moz-transition: background-color 1s;
+  -webkit-transition: background-color 1s;
+  -o-transition: background-color  1s;
+  -ms-transition: background-color 1s;
+  transition: background-color 1s;
+}

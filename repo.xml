@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<meta xmlns="http://exist-db.org/xquery/repo">
+    <description>eXist module for connecting with textgrid</description>
+    <author>Ubbo Veentjer</author>
+    <website>textgrid.de</website>
+    <status>alpha</status>
+    <license>lgpl-3</license>
+    <copyright>true</copyright>
+    <type>library</type>
+    <target>textgrid-connect</target>
+    <deployed>2013-12-18T15:25:35.59+01:00</deployed>
+</meta>
