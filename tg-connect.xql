@@ -2,22 +2,52 @@ xquery version "3.0";
 
 module namespace tgconnect="http://textgrid.info/namespaces/xquery/tgconnect"; 
 
+import module namespace templates="http://exist-db.org/xquery/templates";
 import module namespace tgclient="http://textgrid.info/namespaces/xquery/tgclient" at "tgclient.xqm";
+import module namespace req="http://exquery.org/ns/request";
 
 declare namespace rest="http://exquery.org/ns/restxq";
+declare namespace output="http://www.w3.org/2010/xslt-xquery-serialization";
 declare namespace http="http://expath.org/ns/http-client"; 
 declare namespace tgmd="http://textgrid.info/namespaces/metadata/core/2010";
 
-declare variable $tgconnect:publicRdf := "http://textgridlab.org/1.0/triplestore/textgrid-public";
-declare variable $tgconnect:nonpublicRdf := "http://textgridlab.org/1.0/triplestore/textgrid";
-declare variable $tgconnect:publicCrud := "http://textgridlab.org/1.0/tgcrud-public/rest";
-declare variable $tgconnect:nonpublicCrud := "http://textgridlab.org/1.0/tgcrud/rest";
-declare variable $tgconnect:websiteDataPath := "/sade-projects/default/data/website";
-declare variable $tgconnect:editionDataPath := "/sade-projects/default/data/xml";
+declare variable $tgconnect:websiteDataPath := "/data/website";
+declare variable $tgconnect:editionDataPath := "/data/xml";
 
-declare 
+
+(:~
+ : show html.
+ :)
+declare
     %rest:GET
-    %rest:path("/publish")
+    %rest:path("/publish/{$project}/")
+    %output:media-type("text/html")
+    %output:method("html5")
+function tgconnect:page($project as xs:string*) {
+    let $content := doc("publish-gui.html")
+    let $config := map {
+        (: The following function will be called to look up template parameters :)
+        $templates:CONFIG_PARAM_RESOLVER := function($param as xs:string) as xs:string* {
+            req:parameter($param)
+        }
+    }
+    let $lookup := function($functionName as xs:string, $arity as xs:int) {
+        try {
+            function-lookup(xs:QName($functionName), $arity)
+        } catch * {
+            ()
+        }
+    }
+    return
+        templates:apply($content, $lookup, (), $config)
+};
+
+(: 
+ : publish data to project
+ :)
+declare 
+    %rest:POST
+    %rest:path("/publish/{$project}/process/")
     %rest:form-param("sid", "{$sid}", "")
     %rest:form-param("uri", "{$uri}", "")
     %rest:form-param("target", "{$target}", "data")
@@ -30,28 +60,37 @@ function tgconnect:publish( $uri as xs:string,
                             $sid as xs:string, 
                             $target as xs:string, 
                             $user as xs:string, 
-                            $password as xs:string) {
+                            $password as xs:string,
+                            $project as xs:string) {
+                                
+    let $config := tgclient:getConfig($project)
     
     let $targetPath :=
         if($target eq "website") then
-            $tgconnect:websiteDataPath
+            "/sade-projects/" || $project || $tgconnect:websiteDataPath
         else
-            $tgconnect:editionDataPath
+            "/sade-projects/" || $project || $tgconnect:editionDataPath
     
     return if (xmldb:login($targetPath, $user, $password )) then
+        
+        let $tgcrudUrl := tgclient:config-param-value($config, "textgrid.tgcrud")
+ 
+        (: work around strange bug with publish from public repo
+           where a .0 to much is added.
+           TODO: research
+        :)
+        let $tguri := if(ends-with($uri, ".0.0")) then
+                substring-before($uri, ".") || ".0"
+            else
+                $uri
+ 
+        let $mp := tgclient:getMeta($tguri, $sid, $tgcrudUrl)   
+ 
         let $rdfstoreUrl := 
-            if ($sid) then 
-                $tgconnect:nonpublicRdf
+            if ($mp//tgmd:generated/tgmd:availability = "public") then 
+                tgclient:config-param-value($config, "textgrid.public-triplestore")
             else 
-                $tgconnect:publicRdf
-        
-        let $tgcrudUrl := 
-            if ($sid) then 
-                $tgconnect:nonpublicCrud
-            else 
-                $tgconnect:publicCrud
-        
-        let $tguri := $uri
+                tgclient:config-param-value($config, "textgrid.nonpublic-triplestore")
         
         let $egal := tgconnect:createEntryPoint($uri, concat($targetPath, "/meta"))
          
@@ -69,13 +108,13 @@ function tgconnect:publish( $uri as xs:string,
                     
             return "ok"
             
-        return <ok>published: {$uri} to {$target}</ok>
+        return <ok>published: {$uri} to {$targetPath}</ok>
     else
         <error>error authenticating for {$user} - {$password} on {$targetPath }</error>
 (:        tgconnect:error401:)
 };
 
-(: does not work with restxq-xquery impl, wait for restxq-java with tomcat :)
+(: does not work with restxq-xquery impl :)
 (: declare function tgconnect:error401() {
   <rest:response>
     <http:response status="401" message="wrong user or password">
@@ -90,25 +129,4 @@ declare function tgconnect:createEntryPoint($uri as xs:string, $path as xs:strin
     return xmldb:store($path, $epUri, <entrypoint>{$uri}</entrypoint>, "text/xml")
 };
 
-
-declare 
-    %rest:GET
-    %rest:path("/hello")
-    %rest:form-param("sid", "{$sid}", "")
-    %rest:form-param("uri", "{$uri}", "")
-function tgconnect:hello($sid as xs:string, $uri as xs:string) {
-    let $bla := if ($sid) then
-        "ja"
-        else
-            "nein"
-    return        
-    <huhu>huhu - {$bla} - {$sid} - {$uri} </huhu>
-};
-
-declare 
-    %rest:GET
-    %rest:path("/hello/{$id}")
-function tgconnect:helloi($id as xs:string*) {
-    <huhu>huhu - {$id}</huhu>
-};
 

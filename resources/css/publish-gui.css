@@ -63,3 +63,12 @@ body {
   -ms-transition: background-color 1s;
   transition: background-color 1s;
 }
+
+.success {
+    /*color: #5cb85c;*/
+    color: #468847;
+}
+
+.error {
+    color: #b94a48;
+}

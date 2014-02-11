@@ -1,8 +1,12 @@
 xquery version "3.0";
 
 module namespace tgclient="http://textgrid.info/namespaces/xquery/tgclient";
+import module namespace config="http://exist-db.org/xquery/apps/config" at "../SADE/core/config.xqm";
 declare namespace sparql-results="http://www.w3.org/2005/sparql-results#";
 declare namespace http="http://expath.org/ns/http-client"; 
+declare namespace html="http://www.w3.org/1999/xhtml";
+
+(:declare namespace config="http://bla"; :)
 
 (: 
 Function to get the result for a query as evaluated on a given sesame triple-store
@@ -12,6 +16,16 @@ Function to get the result for a query as evaluated on a given sesame triple-sto
 @param $openrdf-sesame-uri URI locating the openrdf-sesame REST interface
 @return The response body of the query, that is a <sparql-results:sparql> element
 :)
+declare function tgclient:getConfig($project as xs:string) {
+    map { "config" := config:config($project) }
+(:    map{}:)
+};
+
+declare function tgclient:config-param-value($config as map(*), $key as xs:string) as xs:string {
+    config:param-value($config, $key)
+(:"hu":)
+};
+
 declare function tgclient:sparql($query as xs:string, $openrdf-sesame-uri as xs:string) as node() {
 
     let $urlEncQuery := encode-for-uri($query)
@@ -65,4 +79,43 @@ declare function tgclient:remove-prefix($tguri as xs:string) as xs:string {
             return $physicalId
         else
             $tguri
+};
+
+(: 
+ : TODO: authzinstance and reqUrl need to be incoming parameters 
+ :)
+declare function tgclient:getSid($webauthUrl as xs:string, $authZinstance as xs:string, $user as xs:string, $password as xs:string) as xs:string* {
+    
+    let $req := <http:request href="{$webauthUrl}" method="post">
+                    <http:body media-type="application/x-www-form-urlencoded">loginname={$user}&amp;password={$password}&amp;authZinstance={$authZinstance}</http:body>
+                </http:request>
+                        
+    return http:send-request($req)//html:meta[@name="rbac_sessionid"]/@content
+
+};
+
+(: TODO:
+    -  secure cache 
+    - if getting sid fails, don't write sid.xml
+ :)
+declare function tgclient:getSidCached($config as map(*)) as xs:string* {
+    
+    let $tguser := tgclient:config-param-value($config, "textgrid.user")
+    let $tgpass := tgclient:config-param-value($config, "textgrid.password")
+    let $cache-path := tgclient:config-param-value($config, "textgrid.sidcachepath")
+    let $existuser := tgclient:config-param-value($config, "textgrid.sidcachepath.user")
+    let $existpassword := tgclient:config-param-value($config, "textgrid.sidcachepath.password")
+    let $webauth := tgclient:config-param-value($config, "textgrid.webauth")
+    let $authZinstance := tgclient:config-param-value($config, "textgrid.authZinstance")
+    
+    let $status := xmldb:login($cache-path, $existuser, $existpassword)
+    
+    (: if cached sid older 2 days get new sid :)
+    return if( xmldb:created($cache-path, "sid.xml") > (current-dateTime() - xs:dayTimeDuration("P2D")) ) then
+        doc(concat($cache-path, 'sid.xml'))//sid/text()
+    else
+        let $sid := tgclient:getSid($webauth, $authZinstance, $tguser, $tgpass)
+        let $status := xmldb:store($cache-path, 'sid.xml', <sid user="{$tguser}">{$sid}</sid>)
+        return $sid
+    
 };

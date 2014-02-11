@@ -85,12 +85,22 @@ function publish() {
 		// log($(this).attr('uri'));
 		var uri = $(this).attr('uri')
 
+        if(sadeUser === undefined) {
+            sadeUser = $('#user').val();
+            sadePw = $('#password').val();
+            sid = $('#sid').val();
+        }
+
+		// todo: sidreq?
 		var sidreq = sid ? "&sid="+sid : "";
-        var target = $("input[name='target']:checked").val();
+        //var target = $("input[name='target']:checked").val();
+        var target="data";
         console.log('target:' + target);
 		
 		$.ajax({
-			url: 'publish?uri='+uri+'&target='+target+'&user='+sadeUser+'&password='+sadePw + sidreq,
+		    type: 'POST',
+			url: 'process/',
+			data: {'uri': uri,  'target': target, 'user': sadeUser, 'password': sadePw, 'sid': sid },
 			cache: false, 
 			success: function(xml) {
 			    console.log(xml);
@@ -99,13 +109,24 @@ function publish() {
 			    
 			    if($(xml).find('ok').text()) {
     				log('ok: ' + $(xml).find('ok').text());
+    				$('li[uri="'+uri+'"]').append(oksign());
 			    } else {
-			        log('error: ' + $(xml).find('error').text());
+			        errnote = $(xml).find('error').text();
+			        log('error: ' + errnote);
+			        $('li[uri="'+uri+'"]').append(errorsign(errnote));
 			    }
 			},
 		});
 	});
 	
+}
+
+function oksign() {
+    return '<span class="glyphicon glyphicon-ok success"/>';
+}
+
+function errorsign(text) {
+    return '<span class="glyphicon glyphicon-ban-circle error" title="'+text+'" />';
 }
 
 
