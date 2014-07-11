@@ -34,7 +34,6 @@ declare function tgclient:sparql($query as xs:string, $openrdf-sesame-uri as xs:
     let $req := <http:request href="{$reqUrl}" method="get">
                     <http:header name="Accept" value="text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"/>
                 </http:request>
-                        
     return http:send-request($req)[2]
 };
 
@@ -47,7 +46,7 @@ declare function tgclient:getMeta($id as xs:string, $sid as xs:string, $tgcrud-u
     
 };
 
-declare function tgclient:getData($id as xs:string, $sid as xs:string, $tgcrud-url as xs:string) as node()* {
+declare function tgclient:getData($id as xs:string, $sid as xs:string, $tgcrud-url as xs:string)  {
     
     let $reqUrl := string-join(($tgcrud-url,"/",$id,"/data?sessionId=", $sid),"")
     let $req := <http:request href="{$reqUrl}" method="get"/>
@@ -62,7 +61,7 @@ declare function tgclient:getAggregatedUris($tguri as xs:string, $rdfstore as xs
                     PREFIX tg:<http://textgrid.info/relation-ns#>
                     
                     SELECT ?s WHERE {
-                        <",$tguri,"> ore:aggregates* ?s.
+                        <",$tguri,"> (ore:aggregates/tg:isBaseUriOf|ore:aggregates)* ?s.
                     }
                     ")
     
@@ -89,7 +88,6 @@ declare function tgclient:getSid($webauthUrl as xs:string, $authZinstance as xs:
     let $req := <http:request href="{$webauthUrl}" method="post">
                     <http:body media-type="application/x-www-form-urlencoded">loginname={$user}&amp;password={$password}&amp;authZinstance={$authZinstance}</http:body>
                 </http:request>
-                        
     return http:send-request($req)//html:meta[@name="rbac_sessionid"]/@content
 
 };
@@ -100,13 +98,13 @@ declare function tgclient:getSid($webauthUrl as xs:string, $authZinstance as xs:
  :)
 declare function tgclient:getSidCached($config as map(*)) as xs:string* {
     
-    let $tguser := tgclient:config-param-value($config, "textgrid.user")
-    let $tgpass := tgclient:config-param-value($config, "textgrid.password")
-    let $cache-path := tgclient:config-param-value($config, "textgrid.sidcachepath")
-    let $existuser := tgclient:config-param-value($config, "textgrid.sidcachepath.user")
-    let $existpassword := tgclient:config-param-value($config, "textgrid.sidcachepath.password")
-    let $webauth := tgclient:config-param-value($config, "textgrid.webauth")
-    let $authZinstance := tgclient:config-param-value($config, "textgrid.authZinstance")
+    let $tguser := config:param-value($config, "textgrid.user")
+    let $tgpass := config:param-value($config, "textgrid.password")
+    let $cache-path := config:param-value($config, "textgrid.sidcachepath")
+    let $existuser := config:param-value($config, "textgrid.sidcachepath.user")
+    let $existpassword := config:param-value($config, "textgrid.sidcachepath.password")
+    let $webauth := config:param-value($config, "textgrid.webauth")
+    let $authZinstance := config:param-value($config, "textgrid.authZinstance")
     
     let $status := xmldb:login($cache-path, $existuser, $existpassword)
     

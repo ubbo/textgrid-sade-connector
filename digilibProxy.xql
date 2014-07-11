@@ -20,8 +20,8 @@ function digilib:proxy($project as xs:string, $id as xs:string*) {
     let $config := map { "config" := config:config($project) }
     let $sid := tgclient:getSidCached($config)
 
-    let $reqUrl := config:param-value($config, "textgrid.digilib")
-    
+    let $reqUrl := config:param-value($config, "textgrid.digilib") || "/"
+
     let $req := <http:request href="{concat($reqUrl,$id,";sid=",$sid,"?",$query)}" method="get">
                     
                 </http:request>
