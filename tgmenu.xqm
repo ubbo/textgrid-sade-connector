@@ -1,7 +1,6 @@
 xquery version "3.0";
 
 module namespace tgmenu="http://textgrid.info/namespaces/xquery/tgmenu"; 
-import module namespace console="http://exist-db.org/xquery/console";
 
 declare namespace tgmd="http://textgrid.info/namespaces/metadata/core/2010";
 declare namespace rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"; 
