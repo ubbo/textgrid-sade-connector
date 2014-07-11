@@ -5,7 +5,6 @@ module namespace tgconnect="http://textgrid.info/namespaces/xquery/tgconnect";
 import module namespace templates="http://exist-db.org/xquery/templates";
 import module namespace tgclient="http://textgrid.info/namespaces/xquery/tgclient" at "tgclient.xqm";
 import module namespace req="http://exquery.org/ns/request";
-import module namespace console="http://exist-db.org/xquery/console";
 import module namespace tgmenu="http://textgrid.info/namespaces/xquery/tgmenu" at "/db/apps/textgrid-connect/tgmenu.xqm";
 
 declare namespace rest="http://exquery.org/ns/restxq";
@@ -191,7 +190,6 @@ let
             into
                 doc('/sade-projects/' || $project || '/navigation-tg.xml')//agg[@uri = $i/@uri],
     $last := transform:transform(doc('/sade-projects/' || $project || '/navigation-tg.xml'), doc('/sade-projects/' || $project || '/xslt/tg-menu.xslt'), ()),
-    $egal := xmldb:store('/sade-projects/' || $project, '/navigation-bootstrap3.xml', $last, "text/xml"),
-    $egal := console:log('last: ' || doc('/sade-projects/' || $project || '/navigation-tg.xml'))
+    $egal := xmldb:store('/sade-projects/' || $project, '/navigation-bootstrap3.xml', $last, "text/xml")
 return "ok"
 };
