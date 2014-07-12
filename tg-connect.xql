@@ -6,7 +6,6 @@ import module namespace templates="http://exist-db.org/xquery/templates";
 import module namespace tgclient="http://textgrid.info/namespaces/xquery/tgclient" at "tgclient.xqm";
 import module namespace req="http://exquery.org/ns/request";
 import module namespace tgmenu="http://textgrid.info/namespaces/xquery/tgmenu" at "/db/apps/textgrid-connect/tgmenu.xqm";
-import module namespace console="http://exist-db.org/xquery/console";
 
 declare namespace rest="http://exquery.org/ns/restxq";
 declare namespace output="http://www.w3.org/2010/xslt-xquery-serialization";
