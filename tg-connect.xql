@@ -6,6 +6,7 @@ import module namespace templates="http://exist-db.org/xquery/templates";
 import module namespace tgclient="http://textgrid.info/namespaces/xquery/tgclient" at "tgclient.xqm";
 import module namespace req="http://exquery.org/ns/request";
 import module namespace tgmenu="http://textgrid.info/namespaces/xquery/tgmenu" at "/db/apps/textgrid-connect/tgmenu.xqm";
+import module namespace console="http://exist-db.org/xquery/console";
 
 declare namespace rest="http://exquery.org/ns/restxq";
 declare namespace output="http://www.w3.org/2010/xslt-xquery-serialization";
@@ -93,7 +94,7 @@ function tgconnect:publish( $uri as xs:string,
             else 
                 tgclient:config-param-value($config, "textgrid.nonpublic-triplestore")
 
-        let $egal := tgconnect:createEntryPoint($uri, concat($targetPath, "/meta")),
+        let $egal := tgconnect:createEntryPoint($tguri, concat($targetPath, "/meta")),
             $oks :=
                 for $pubUri in tgclient:getAggregatedUris($tguri, $rdfstoreUrl)
                     let $meta := tgclient:getMeta($pubUri, $sid, $tgcrudUrl),
@@ -107,7 +108,7 @@ function tgconnect:publish( $uri as xs:string,
                             let $data := tgclient:getData($pubUri, $sid, $tgcrudUrl)
                             return xmldb:store(concat($targetPath, "/tile"), $targetUri, $data, "text/xml")
                         else if(starts-with($meta//tgmd:format/text(), "image")) then ' '
-                        else if (contains($meta//tgmd:format[not(contains(base-uri(), $uri))]/text(), "tg.aggregation")) then
+                        else if (contains($meta//tgmd:format[not(contains(base-uri(), $tguri))]/text(), "tg.aggregation")) then
                             let $data := tgclient:getData($pubUri, $sid, $tgcrudUrl)
                             return xmldb:store(concat($targetPath, "/agg"), $targetUri, $data, "text/xml")
                         else
@@ -141,15 +142,16 @@ let
     $egal := for $ep in $metacoll//entrypoint/text()
             return
                 update
-                insert tgmenu:entry($ep/substring-after(., 'textgrid:'), $metacoll)
+                insert tgmenu:entry(string($ep), $metacoll)
                 into doc('/sade-projects/' || $project || '/navigation-tg.xml')/navigation,
+    
     $step1 :=
         for $i in doc('/sade-projects/' || $project || '/navigation-tg.xml')//agg
         where not($i/*)
         return
             update
                 insert
-                    tgmenu:getsubeps($metacoll, 'textgrid:' || $i/@uri)
+                    tgmenu:getsubeps($metacoll, $i/@uri)
                 into
                     doc('/sade-projects/' || $project || '/navigation-tg.xml')//agg[@uri = $i/@uri],
             
@@ -159,7 +161,7 @@ let
         return
             update
                 insert
-                    tgmenu:getsubeps($metacoll, 'textgrid:' || $i/@uri)
+                    tgmenu:getsubeps($metacoll, $i/@uri)
                 into
                     doc('/sade-projects/' || $project || '/navigation-tg.xml')//agg[@uri = $i/@uri],
     $step3 :=
@@ -168,7 +170,7 @@ let
         return
             update
                 insert
-                    tgmenu:getsubeps($metacoll, 'textgrid:' || $i/@uri)
+                    tgmenu:getsubeps($metacoll, $i/@uri)
                 into
                     doc('/sade-projects/' || $project || '/navigation-tg.xml')//agg[@uri = $i/@uri],
     $step4 :=
@@ -177,7 +179,7 @@ let
         return
             update
                 insert
-                    tgmenu:getsubeps($metacoll, 'textgrid:' || $i/@uri)
+                    tgmenu:getsubeps($metacoll, $i/@uri)
                 into
                     doc('/sade-projects/' || $project || '/navigation-tg.xml')//agg[@uri = $i/@uri],
     $step5 :=
@@ -186,7 +188,7 @@ let
         return
         update
             insert
-                tgmenu:getsubeps($metacoll, 'textgrid:' || $i/@uri)
+                tgmenu:getsubeps($metacoll, $i/@uri)
             into
                 doc('/sade-projects/' || $project || '/navigation-tg.xml')//agg[@uri = $i/@uri],
     $last := transform:transform(doc('/sade-projects/' || $project || '/navigation-tg.xml'), doc('/sade-projects/' || $project || '/xslt/tg-menu.xslt'), ()),
