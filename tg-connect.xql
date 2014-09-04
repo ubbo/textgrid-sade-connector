@@ -139,62 +139,9 @@ declare function tgconnect:createEntryPoint($uri as xs:string, $path as xs:strin
 };
 
 declare function tgconnect:buildmenu($project as xs:string, $targetPath as xs:string) {
-let 
-    $egal :=  xmldb:store('/sade-projects/' || $project, '/navigation-tg.xml', <navigation/>, "text/xml"),
-    $metacoll := collection($targetPath || '/meta'),
-    $egal := for $ep in $metacoll//entrypoint/text()
-            return
-                update
-                insert tgmenu:entry(string($ep), $metacoll)
-                into doc('/sade-projects/' || $project || '/navigation-tg.xml')/navigation,
-    
-    $step1 :=
-        for $i in doc('/sade-projects/' || $project || '/navigation-tg.xml')//agg
-        where not($i/*)
-        return
-            update
-                insert
-                    tgmenu:getsubeps($metacoll, $i/@uri)
-                into
-                    doc('/sade-projects/' || $project || '/navigation-tg.xml')//agg[@uri = $i/@uri],
-            
-    $step2 :=
-        for $i in doc('/sade-projects/' || $project || '/navigation-tg.xml')//agg
-        where not($i/*)
-        return
-            update
-                insert
-                    tgmenu:getsubeps($metacoll, $i/@uri)
-                into
-                    doc('/sade-projects/' || $project || '/navigation-tg.xml')//agg[@uri = $i/@uri],
-    $step3 :=
-        for $i in doc('/sade-projects/' || $project || '/navigation-tg.xml')//agg
-        where not($i/*)
-        return
-            update
-                insert
-                    tgmenu:getsubeps($metacoll, $i/@uri)
-                into
-                    doc('/sade-projects/' || $project || '/navigation-tg.xml')//agg[@uri = $i/@uri],
-    $step4 :=
-        for $i in doc('/sade-projects/' || $project || '/navigation-tg.xml')//agg
-        where not($i/*)
-        return
-            update
-                insert
-                    tgmenu:getsubeps($metacoll, $i/@uri)
-                into
-                    doc('/sade-projects/' || $project || '/navigation-tg.xml')//agg[@uri = $i/@uri],
-    $step5 :=
-        for $i in doc('/sade-projects/' || $project || '/navigation-tg.xml')//agg
-        where not($i/*)
-        return
-        update
-            insert
-                tgmenu:getsubeps($metacoll, $i/@uri)
-            into
-                doc('/sade-projects/' || $project || '/navigation-tg.xml')//agg[@uri = $i/@uri],
-    $last := transform:transform(doc('/sade-projects/' || $project || '/navigation-tg.xml'), doc('/sade-projects/' || $project || '/xslt/tg-menu.xslt'), ()),
-    $egal := xmldb:store('/sade-projects/' || $project, '/navigation-bootstrap3.xml', $last, "text/xml")
+let $nav := tgmenu:init($project, $targetPath),
+    $egal := xmldb:store('/sade-projects/' || $project, '/navigation-tg.xml', $nav, "text/xml"),
+    $last := transform:transform($nav, doc('/sade-projects/' || $project || '/xslt/tg-menu.xslt'), ()),
+    $egal := xmldb:store('/sade-projects/' || $project, '/navigation-tmpl1.xml', $last, "text/xml")
 return "ok"
 };
