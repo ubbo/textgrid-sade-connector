@@ -142,6 +142,6 @@ declare function tgconnect:buildmenu($project as xs:string, $targetPath as xs:st
 let $nav := tgmenu:init($project, $targetPath),
     $egal := xmldb:store('/sade-projects/' || $project, '/navigation-tg.xml', $nav, "text/xml"),
     $last := transform:transform($nav, doc('/sade-projects/' || $project || '/xslt/tg-menu.xslt'), ()),
-    $egal := xmldb:store('/sade-projects/' || $project, '/navigation-tmpl1.xml', $last, "text/xml")
+    $egal := xmldb:store('/sade-projects/' || $project, '/navigation-' || tgclient:config-param-value($config, "template") || '.xml', $last, "text/xml")
 return "ok"
 };
