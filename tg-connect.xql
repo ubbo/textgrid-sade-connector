@@ -117,7 +117,7 @@ function tgconnect:publish( $uri as xs:string,
                         else
                             ()
                 return "ok"
-        return <ok>published: {$uri} to {$targetPath || tgconnect:buildmenu($project, $targetPath)}</ok>
+        return <ok>published: {$uri} to {$targetPath || tgconnect:buildmenu($project, $targetPath, tgclient:config-param-value($config, "template"))}</ok>
     else
         <error>error authenticating for {$user} - {$password} on {$targetPath}</error>
 (:        tgconnect:error401:)
@@ -138,10 +138,10 @@ declare function tgconnect:createEntryPoint($uri as xs:string, $path as xs:strin
     return xmldb:store($path, $epUri, <entrypoint>{$uri}</entrypoint>, "text/xml") 
 };
 
-declare function tgconnect:buildmenu($project as xs:string, $targetPath as xs:string) {
+declare function tgconnect:buildmenu($project as xs:string, $targetPath as xs:string, $template as xs:string) {
 let $nav := tgmenu:init($project, $targetPath),
     $egal := xmldb:store('/sade-projects/' || $project, '/navigation-tg.xml', $nav, "text/xml"),
     $last := transform:transform($nav, doc('/sade-projects/' || $project || '/xslt/tg-menu.xslt'), ()),
-    $egal := xmldb:store('/sade-projects/' || $project, '/navigation-' || tgclient:config-param-value($config, "template") || '.xml', $last, "text/xml")
+    $egal := xmldb:store('/sade-projects/' || $project, '/navigation-' || $template || '.xml', $last, "text/xml")
 return "ok"
 };
