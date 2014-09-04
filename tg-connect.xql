@@ -100,6 +100,8 @@ function tgconnect:publish( $uri as xs:string,
                         $targetUri := concat(tgclient:remove-prefix($meta//tgmd:textgridUri/text()), ".xml"),
                         $egal := xmldb:store(concat($targetPath, "/meta"), $targetUri, $meta, "text/xml")
                     let $egal := 
+                        if ($meta//tgmd:warning) then ()
+                        else
                         if ($meta//tgmd:format[not(contains(base-uri(), $uri))]/text() eq "text/xml") then
                             let $data := tgclient:getData($pubUri, $sid, $tgcrudUrl)
                             return xmldb:store(concat($targetPath, "/data"), $targetUri, $data, "text/xml")
