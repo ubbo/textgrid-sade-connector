@@ -2,6 +2,7 @@ xquery version "3.0";
 
 module namespace tgclient="http://textgrid.info/namespaces/xquery/tgclient";
 import module namespace config="http://exist-db.org/xquery/apps/config" at "../SADE/core/config.xqm";
+
 declare namespace sparql-results="http://www.w3.org/2005/sparql-results#";
 declare namespace http="http://expath.org/ns/http-client"; 
 declare namespace html="http://www.w3.org/1999/xhtml";
@@ -33,6 +34,7 @@ declare function tgclient:sparql($query as xs:string, $openrdf-sesame-uri as xs:
     
     let $req := <http:request href="{$reqUrl}" method="get">
                     <http:header name="Accept" value="text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"/>
+                    <http:header name="Connection" value="close"/>
                 </http:request>
     return http:send-request($req)[2]
 };
@@ -41,7 +43,9 @@ declare function tgclient:sparql($query as xs:string, $openrdf-sesame-uri as xs:
 declare function tgclient:getMeta($id as xs:string, $sid as xs:string, $tgcrud-url as xs:string) as node() {
     
     let $reqUrl := xs:anyURI(string-join(($tgcrud-url,"/",$id,"/metadata?sessionId=", $sid),""))
-    let $req := <http:request href="{$reqUrl}" method="get"/>
+    let $req := <http:request href="{$reqUrl}" method="get">
+                    <http:header name="Connection" value="close"/>
+                </http:request>
     return http:send-request($req)[2]
     
 };
@@ -49,7 +53,9 @@ declare function tgclient:getMeta($id as xs:string, $sid as xs:string, $tgcrud-u
 declare function tgclient:getData($id as xs:string, $sid as xs:string, $tgcrud-url as xs:string)  {
     
     let $reqUrl := string-join(($tgcrud-url,"/",$id,"/data?sessionId=", $sid),"")
-    let $req := <http:request href="{$reqUrl}" method="get"/>
+    let $req := <http:request href="{$reqUrl}" method="get">
+                    <http:header name="Connection" value="close"/>
+                </http:request>
     return http:send-request($req)[2]
 
 };
@@ -86,6 +92,7 @@ declare function tgclient:remove-prefix($tguri as xs:string) as xs:string {
 declare function tgclient:getSid($webauthUrl as xs:string, $authZinstance as xs:string, $user as xs:string, $password as xs:string) as xs:string* {
     
     let $req := <http:request href="{$webauthUrl}" method="post">
+                    <http:header name="Connection" value="close"/>
                     <http:body media-type="application/x-www-form-urlencoded">loginname={$user}&amp;password={$password}&amp;authZinstance={$authZinstance}</http:body>
                 </http:request>
     return http:send-request($req)//html:meta[@name="rbac_sessionid"]/@content
