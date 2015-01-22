@@ -1,7 +1,8 @@
 xquery version "3.0";
 
-module namespace tgconnect="http://textgrid.info/namespaces/xquery/tgconnect"; 
+module namespace tgconnect="http://textgrid.info/namespaces/xquery/tgconnect";
 
+import module namespace functx="http://www.functx.com";
 import module namespace templates="http://exist-db.org/xquery/templates";
 import module namespace tgclient="http://textgrid.info/namespaces/xquery/tgclient" at "tgclient.xqm";
 import module namespace req="http://exquery.org/ns/request";
@@ -9,7 +10,7 @@ import module namespace tgmenu="http://textgrid.info/namespaces/xquery/tgmenu" a
 
 declare namespace rest="http://exquery.org/ns/restxq";
 declare namespace output="http://www.w3.org/2010/xslt-xquery-serialization";
-declare namespace http="http://expath.org/ns/http-client"; 
+declare namespace http="http://expath.org/ns/http-client";
 declare namespace tgmd="http://textgrid.info/namespaces/metadata/core/2010";
 
 declare variable $tgconnect:websiteDataPath := "/data/website";
@@ -43,10 +44,10 @@ function tgconnect:page($project as xs:string*) {
         templates:apply($content, $lookup, (), $config)
 };
 
-(: 
+(:
  : publish data to project
  :)
-declare 
+declare
     %rest:POST
     %rest:path("/publish/{$project}/process/")
     %rest:form-param("sid", "{$sid}", "")
@@ -57,23 +58,23 @@ declare
 
 (:    %rest:produces("text/plain"):)
 
-function tgconnect:publish( $uri as xs:string, 
-                            $sid as xs:string, 
-                            $target as xs:string, 
-                            $user as xs:string, 
+function tgconnect:publish( $uri as xs:string,
+                            $sid as xs:string,
+                            $target as xs:string,
+                            $user as xs:string,
                             $password as xs:string,
                             $project as xs:string) {
-                                
+
     let $config := tgclient:getConfig($project)
-    
+
     let $targetPath :=
         if($target eq "website") then
             "/sade-projects/" || $project || $tgconnect:websiteDataPath
         else
             "/sade-projects/" || $project || $tgconnect:editionDataPath
-    
+
     return if (xmldb:login($targetPath, $user, $password )) then
-        
+
         let $tgcrudUrl := tgclient:config-param-value($config, "textgrid.tgcrud")
 
         (: work around strange bug with publish from public repo
@@ -87,10 +88,10 @@ function tgconnect:publish( $uri as xs:string,
 
         let $mp := tgclient:getMeta($tguri, $sid, $tgcrudUrl)
 
-        let $rdfstoreUrl := 
-            if ($mp//tgmd:generated/tgmd:availability = "public") then 
+        let $rdfstoreUrl :=
+            if ($mp//tgmd:generated/tgmd:availability = "public") then
                 tgclient:config-param-value($config, "textgrid.public-triplestore")
-            else 
+            else
                 tgclient:config-param-value($config, "textgrid.nonpublic-triplestore")
 
         let $egal := tgconnect:createEntryPoint($tguri, concat($targetPath, "/meta")),
@@ -99,13 +100,13 @@ function tgconnect:publish( $uri as xs:string,
                     let $meta := tgclient:getMeta($pubUri, $sid, $tgcrudUrl),
                         $targetUri := concat(tgclient:remove-prefix($meta//tgmd:textgridUri/text()), ".xml"),
                         $egal := xmldb:store(concat($targetPath, "/meta"), $targetUri, $meta, "text/xml")
-                    let $egal := 
+                    let $egal :=
                         if ($meta//tgmd:warning) then ()
                         else
                             if ($meta//tgmd:format[not(contains(base-uri(), $uri))]/text() eq "text/xml")
-                                then let $data :=    try {tgclient:getData($pubUri, $sid, $tgcrudUrl) } 
+                                then let $data :=    try {tgclient:getData($pubUri, $sid, $tgcrudUrl) }
                                                     catch * { <error>{concat($err:code, ": ", $err:description)}</error> }
-                                return try { xmldb:store(concat($targetPath, "/data"), $targetUri, $data, "text/xml") } 
+                                return try { xmldb:store(concat($targetPath, "/data"), $targetUri, $data, "text/xml") }
                                        catch * { concat($err:code, ": ", $err:description) }
                         else if($meta//tgmd:format/text() eq "text/linkeditorlinkedfile") then
                             let $data := tgclient:getData($pubUri, $sid, $tgcrudUrl)
@@ -117,7 +118,7 @@ function tgconnect:publish( $uri as xs:string,
                         else
                             ()
                 return "ok"
-        return <ok>published: {$uri} to {$targetPath || tgconnect:buildmenu($project, $targetPath, tgclient:config-param-value($config, "template"))}</ok>
+        return <ok>published: {$uri} to {$targetPath || tgconnect:buildmenu($project, $targetPath, tgclient:config-param-value($config, "template")) || tgconnect:buildstats($project)}</ok>
     else
         <error>error authenticating for {$user} - {$password} on {$targetPath}</error>
 (:        tgconnect:error401:)
@@ -135,7 +136,7 @@ function tgconnect:publish( $uri as xs:string,
 
 declare function tgconnect:createEntryPoint($uri as xs:string, $path as xs:string) {
     let $epUri := concat(tgclient:remove-prefix($uri), ".ep.xml")
-    return xmldb:store($path, $epUri, <entrypoint>{$uri}</entrypoint>, "text/xml") 
+    return xmldb:store($path, $epUri, <entrypoint>{$uri}</entrypoint>, "text/xml")
 };
 
 declare function tgconnect:buildmenu($project as xs:string, $targetPath as xs:string, $template as xs:string) {
@@ -144,4 +145,29 @@ let $nav := tgmenu:init($project, $targetPath),
     $last := transform:transform($nav, doc('/sade-projects/' || $project || '/xslt/tg-menu.xslt'), ()),
     $egal := xmldb:store('/sade-projects/' || $project, '/navigation-' || $template || '.xml', $last, "text/xml")
 return "ok"
+};
+
+declare function tgconnect:buildstats($project as xs:string) {
+
+    let $path := '/sade-projects/' || $project
+    let $coll := collection($path || '/data/xml/data')
+    let $doc := doc($path || '/stats.xml')
+
+    let $date := current-dateTime()
+
+    let $words := sum(for $doc in $coll
+        return functx:word-count(string($doc)))
+
+    let $doc :=
+        <stats>
+            {$doc/stats/publ}
+            <publ>
+                <date>{$date}</date>
+                <words>{$words}</words>
+            </publ>
+        </stats>
+
+    let $tmp := xmldb:store($path, 'stats.xml', $doc, 'text/xml')
+    return 'ok'
+
 };
