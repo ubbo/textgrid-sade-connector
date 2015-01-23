@@ -144,7 +144,7 @@ let $nav := tgmenu:init($project, $targetPath),
     $egal := xmldb:store('/sade-projects/' || $project, '/navigation-tg.xml', $nav, "text/xml"),
     $last := transform:transform($nav, doc('/sade-projects/' || $project || '/xslt/tg-menu.xslt'), ()),
     $egal := xmldb:store('/sade-projects/' || $project, '/navigation-' || $template || '.xml', $last, "text/xml")
-return "ok"
+return " menu: ok"
 };
 
 declare function tgconnect:buildstats($project as xs:string) {
@@ -168,6 +168,6 @@ declare function tgconnect:buildstats($project as xs:string) {
         </stats>
 
     let $tmp := xmldb:store($path, 'stats.xml', $doc, 'text/xml')
-    return 'ok'
+    return ' stats: ok'
 
 };
