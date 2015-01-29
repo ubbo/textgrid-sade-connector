@@ -111,6 +111,9 @@ function tgconnect:publish( $uri as xs:string,
                         else if($meta//tgmd:format/text() eq "text/linkeditorlinkedfile") then
                             let $data := tgclient:getData($pubUri, $sid, $tgcrudUrl)
                             return xmldb:store(concat($targetPath, "/tile"), $targetUri, $data, "text/xml")
+                        else if($meta//tgmd:format/text() eq "text/tg.inputform+rdf+xml") then
+                            let $data := tgclient:getData($pubUri, $sid, $tgcrudUrl)
+                            return xmldb:store(concat($targetPath, "/rdf"), $targetUri, $data, "text/xml")
                         else if(starts-with($meta//tgmd:format/text(), "image")) then ' '
                         else if (contains($meta//tgmd:format[not(contains(base-uri(), $tguri))]/text(), "tg.aggregation")) then
                             let $data := tgclient:getData($pubUri, $sid, $tgcrudUrl)
