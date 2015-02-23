@@ -90,7 +90,7 @@ declare function tgclient:remove-prefix($tguri as xs:string) as xs:string {
  : TODO: authzinstance and reqUrl need to be incoming parameters 
  :)
 declare function tgclient:getSid($webauthUrl as xs:string, $authZinstance as xs:string, $user as xs:string, $password as xs:string) as xs:string* {
-    
+    let $pw := if(contains($password, '&amp;')) then replace($password, '&amp;', '%26') else $password
     let $req := <http:request href="{$webauthUrl}" method="post">
                     <http:header name="Connection" value="close"/>
                     <http:body media-type="application/x-www-form-urlencoded">loginname={$user}&amp;password={$password}&amp;authZinstance={$authZinstance}</http:body>
@@ -121,6 +121,7 @@ declare function tgclient:getSidCached($config as map(*)) as xs:string* {
     else
         let $sid := tgclient:getSid($webauth, $authZinstance, $tguser, $tgpass)
         let $status := xmldb:store($cache-path, 'sid.xml', <sid user="{$tguser}">{$sid}</sid>)
+        let $chmod := sm:chmod(xs:anyURI($cache-path || "sid.xml"), 'rw-------')
         return $sid
     
 };
