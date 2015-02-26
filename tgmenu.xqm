@@ -33,6 +33,7 @@ switch ($format)
 declare function tgmenu:getsubeps($metacoll, $ep, $project) {
 if ($ep = 'inital') then
     for $uri in $metacoll//entrypoint/text()
+    order by $metacoll//tgmd:title[following::tgmd:textgridUri[1]/text() =  $uri][last()]/text()
     return
         let $format := $metacoll//tgmd:format[following::tgmd:textgridUri[1]/text() = $uri][last()]/text()
         let $title := $metacoll//tgmd:title[following::tgmd:textgridUri[1]/text() =  $uri][last()]/text()
