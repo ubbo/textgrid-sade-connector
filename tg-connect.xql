@@ -121,7 +121,7 @@ function tgconnect:publish( $uri as xs:string,
                         else
                             ()
                 return "ok"
-        return <ok>published: {$uri} to {$targetPath || tgconnect:buildmenu($project, $targetPath, tgclient:config-param-value($config, "template")) || tgconnect:buildstats($project)}</ok>
+        return <ok>published: {$uri} to {$targetPath || tgconnect:buildmenu($project, $targetPath, tgclient:config-param-value($config, "template")) || tgconnect:buildstats($project)}; reindex: {xmldb:reindex('/db' || $targetPath)}</ok>
     else
         <error>error authenticating for {$user} - {$password} on {$targetPath}</error>
 (:        tgconnect:error401:)
