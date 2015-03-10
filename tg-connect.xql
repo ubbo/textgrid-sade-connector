@@ -158,8 +158,9 @@ declare function tgconnect:buildstats($project as xs:string) {
 
     let $date := current-dateTime()
 
-    let $words := sum(for $doc in $coll
-        return count(tokenize(string($doc) '\W+')[. != ''])
+    let $words := 
+     sum(for $doc in $coll
+          return count(tokenize(string($doc), '\W+')[. != '']))
 
     let $doc :=
         <stats>
