@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://expath.org/ns/pkg" name="http://textgrid.de/exist/textgrid-connect" abbrev="textgrid-connect" version="0.1" spec="1.0">
     <title>exist connector for textgrid</title>
-    <dependency package="http://www.functx.com"/>
 </package>
