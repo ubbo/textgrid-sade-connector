@@ -108,6 +108,9 @@ function tgconnect:publish( $uri as xs:string,
                                                     catch * { <error>{concat($err:code, ": ", $err:description)}</error> }
                                 return try { xmldb:store(concat($targetPath, "/data"), $targetUri, $data, "text/xml") }
                                        catch * { concat($err:code, ": ", $err:description) }
+                        else if($meta//tgmd:format/text() eq "text/xml+xslt") then
+                            let $data := tgclient:getData($pubUri, $sid, $tgcrudUrl)
+                            return xmldb:store(concat($targetPath, "/data"), $targetUri, $data, "text/xml")
                         else if($meta//tgmd:format/text() eq "text/linkeditorlinkedfile") then
                             let $data := tgclient:getData($pubUri, $sid, $tgcrudUrl)
                             return xmldb:store(concat($targetPath, "/tile"), $targetUri, $data, "text/xml")
