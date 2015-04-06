@@ -20,10 +20,10 @@ function digilib:proxy($project as xs:string, $id as xs:string*, $if-modified-si
     let $data-dir := config:param-value($config, 'data-dir')
 
     (: check if 301 could be send, comparing textgrid-metadata with if-modified-since :)
-    (: somehow parsing weekday as EEE did not work, so substring-after is used:)
+    (: this only works if local LANG is en :)
     return if (
         (fn:string-length($if-modified-since) > 0) and
-        (datetime:parse-dateTime( substring-after($if-modified-since, ","), 'd MMM yyyy HH:mm:ss Z' ) <= 
+        (datetime:parse-dateTime( $if-modified-since, 'EEE, d MMM yyyy HH:mm:ss Z' ) <=
             xs:dateTime(collection($data-dir)//*[starts-with(tg:textgridUri/text(), $id)]/tg:lastModified/text()))
     ) then
         let $tmp := response:set-status-code( 304 )
