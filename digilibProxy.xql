@@ -21,6 +21,7 @@ function digilib:proxy($project as xs:string, $id as xs:string*, $if-modified-si
 
     (: check if 301 could be send, comparing textgrid-metadata with if-modified-since :)
     (: this only works if local LANG is en :)
+(:
     return if (
         (fn:string-length($if-modified-since) > 0) and
         (datetime:parse-dateTime( $if-modified-since, 'EEE, d MMM yyyy HH:mm:ss Z' ) <=
@@ -29,6 +30,7 @@ function digilib:proxy($project as xs:string, $id as xs:string*, $if-modified-si
         let $tmp := response:set-status-code( 304 )
         return <ok/>
     else
+:)
 
         let $sid := tgclient:getSidCached($config)
         let $reqUrl := config:param-value($config, "textgrid.digilib") || "/"
