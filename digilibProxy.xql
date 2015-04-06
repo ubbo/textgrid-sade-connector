@@ -2,34 +2,50 @@ xquery version "3.0";
 module namespace digilib="http://textgrid.info/namespaces/xquery/digilib";
 import module namespace tgclient="http://textgrid.info/namespaces/xquery/tgclient" at "/db/apps/textgrid-connect/tgclient.xqm";
 import module namespace config="http://exist-db.org/xquery/apps/config" at "../SADE/core/config.xqm";
+import module namespace datetime = "http://exist-db.org/xquery/datetime" at "java:org.exist.xquery.modules.datetime.DateTimeModule";
 
-declare namespace tei="http://www.tei-c.org/ns/1.0";
 declare namespace http="http://expath.org/ns/http-client"; 
-declare namespace html="http://www.w3.org/1999/xhtml";
-(:declare namespace response="http://exist-db.org/xquery/response";:)
+declare namespace tg="http://textgrid.info/namespaces/metadata/core/2010";
 
-(: look at http://en.wikibooks.org/wiki/XQuery/Setting_HTTP_Headers :)
 
 declare 
     %rest:GET
     %rest:path("/digilib/{$project}/{$id}")
-function digilib:proxy($project as xs:string, $id as xs:string*) {
+    %rest:header-param("if-modified-since", "{$if-modified-since}")
+function digilib:proxy($project as xs:string, $id as xs:string*, $if-modified-since as xs:string*) {
     
     let $query := request:get-query-string()
     
     let $config := map { "config" := config:config($project) }
-    let $sid := tgclient:getSidCached($config)
+    let $data-dir := config:param-value($config, 'data-dir')
 
-    let $reqUrl := config:param-value($config, "textgrid.digilib") || "/"
+    (: check if 301 could be send, comparing textgrid-metadata with if-modified-since :)
+    (: somehow parsing weekday as EEE did not work, so substring-after is used:)
+    return if (
+        (fn:string-length($if-modified-since) > 0) and
+        (datetime:parse-dateTime( substring-after($if-modified-since, ","), 'd MMM yyyy HH:mm:ss Z' ) <= 
+            xs:dateTime(collection($data-dir)//*[starts-with(tg:textgridUri/text(), $id)]/tg:lastModified/text()))
+    ) then
+        let $tmp := response:set-status-code( 304 )
+        return <ok/>
+    else
 
-    let $req := <http:request href="{concat($reqUrl,$id,";sid=",$sid,"?",$query)}" method="get">
-                    
-                </http:request>
+        let $sid := tgclient:getSidCached($config)
+        let $reqUrl := config:param-value($config, "textgrid.digilib") || "/"
     
-    let $result := http:send-request($req)
-    let $mime := xs:string($result[1]//http:header[@name="content-type"]/@value)
-    return response:stream-binary($result[2], $mime) 
+        let $req := <http:request href="{concat($reqUrl,$id,";sid=",$sid,"?",$query)}" method="get">
+                    </http:request>
+
+        let $result := http:send-request($req)
+
+        let $mime := xs:string($result[1]//http:header[@name="content-type"]/@value)
+        let $last-modified := xs:string($result[1]//http:header[@name="last-modified"]/@value)
+        let $cache-control := xs:string($result[1]//http:header[@name="cache-control"]/@value)
+        let $tmp := response:set-header("Last-Modified", $last-modified)
+        let $tmp := response:set-header("Cache-Control", $cache-control)
+
+        return
+            response:stream-binary($result[2], $mime)
 
 };
-
 
