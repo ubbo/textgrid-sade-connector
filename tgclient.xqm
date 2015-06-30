@@ -71,8 +71,10 @@ declare function tgclient:getAggregatedUris($tguri as xs:string, $rdfstore as xs
                     ")
     
     let $uris := tgclient:sparql($query, $rdfstore)
-    let $maxRev := for $u in $uris//sparql-results:uri/string() where substring-after($u, '.') = max( $uris//sparql-results:uri[substring-before(., '.') = substring-before($u, '.')]/substring-after(., '.') ) return $u
-    let $uris := $uris//sparql-results:uri/string()
+    let $maxRev :=
+ for $u in distinct-values( $uris//sparql-results:uri/substring-before(.,'.'))
+        where $u != ''
+        return $u || '.' || max( ( $uris//sparql-results:uri[starts-with(., $u)][contains(. , '.')]/number(substring-after(., '.'))) )    let $uris := $uris//sparql-results:uri/string()
     return $uris
     (: use $maxRev instead of $uris to grap only latest revisions! :)
 };
