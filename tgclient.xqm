@@ -61,7 +61,6 @@ declare function tgclient:getData($id as xs:string, $sid as xs:string, $tgcrud-u
 };
 
 declare function tgclient:getAggregatedUris($tguri as xs:string, $rdfstore as xs:string) as item()* {
-
     let $query := concat("
                     PREFIX ore:<http://www.openarchives.org/ore/terms/>
                     PREFIX tg:<http://textgrid.info/relation-ns#>
@@ -72,7 +71,10 @@ declare function tgclient:getAggregatedUris($tguri as xs:string, $rdfstore as xs
                     ")
     
     let $uris := tgclient:sparql($query, $rdfstore)
-    return $uris//sparql-results:uri/text()
+    let $maxRev := for $u in $uris//sparql-results:uri/string() where substring-after($u, '.') = max( $uris//sparql-results:uri[substring-before(., '.') = substring-before($u, '.')]/substring-after(., '.') ) return $u
+    let $uris := $uris//sparql-results:uri/string()
+    return $uris
+    (: use $maxRev instead of $uris to grap only latest revisions! :)
 };
 
 declare function tgclient:remove-prefix($tguri as xs:string) as xs:string {
