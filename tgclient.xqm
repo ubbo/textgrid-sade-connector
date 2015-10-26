@@ -120,10 +120,11 @@ declare function tgclient:getSidCached($config as map(*)) as xs:string* {
     let $status := xmldb:login($cache-path, $existuser, $existpassword)
     
     (: if cached sid older 2 days get new sid :)
-    return if( xmldb:created($cache-path, "sid.xml") < (current-dateTime() - xs:dayTimeDuration("P2D")) and doc($cache-path || "/sid.xml")//sid/@user = $tguser ) then
+    return if( xmldb:last-modified($cache-path, "sid.xml") > (current-dateTime() - xs:dayTimeDuration("P2D")) and doc($cache-path || "/sid.xml")//sid/@user = $tguser ) then
         doc($cache-path || "/sid.xml")//sid/text()
     else
         let $sid := tgclient:getSid($webauth, $authZinstance, $tguser, $tgpass)
+        let $login := xmldb:login($cache-path, config:param-value($config, "sade.user"), config:param-value($config, "sade.password"))
         let $status := xmldb:store($cache-path, 'sid.xml', <sid user="{$tguser}">{$sid}</sid>)
         let $chmod := sm:chmod(xs:anyURI($cache-path || "sid.xml"), 'rw-------')
         return $sid
