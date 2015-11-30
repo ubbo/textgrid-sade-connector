@@ -36,6 +36,7 @@ function digilib:proxy($project as xs:string, $id as xs:string*, $if-modified-si
         let $reqUrl := config:param-value($config, "textgrid.digilib") || "/"
     
         let $req := <http:request href="{concat($reqUrl,$id,";sid=",$sid,"?",$query)}" method="get">
+                        <http:header name="Connection" value="close"/>
                     </http:request>
 
         let $result := http:send-request($req)
