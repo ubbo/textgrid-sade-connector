@@ -13,12 +13,33 @@ declare
     %rest:path("/digilib/{$project}/{$id}")
     %rest:header-param("if-modified-since", "{$if-modified-since}")
 function digilib:proxy($project as xs:string, $id as xs:string*, $if-modified-since as xs:string*) {
-    
+if (contains(request:get-query-string() , 'm2')) 
+    then (
+        let $reqUrl := 'http://localhost:8080/exist/apps/textgrid-connect/digilibProxyMiradorForward.xql?image='||$id
+
+        let $req := <http:request href="{$reqUrl}" method="get">
+                    </http:request>
+
+        let $result := http:send-request($req)
+
+        let $mime := xs:string($result[1]//http:header[@name="content-type"]/@value)
+        let $last-modified := xs:string($result[1]//http:header[@name="last-modified"]/@value)
+        let $cache-control := xs:string($result[1]//http:header[@name="cache-control"]/@value)
+(:        let $tmp := response:set-header("Last-Modified", $last-modified):)
+(:        let $tmp := response:set-header("Cache-Control", $cache-control):)
+
+        return
+            ($result[2])
+        ) 
+else    
     let $query := request:get-query-string()
     
     let $config := map { "config" := config:config($project) }
     let $data-dir := config:param-value($config, 'data-dir')
-
+    
+    let $id :=  if (matches($id, '_') and (starts-with($id, 'A') or starts-with($id, 'B') or starts-with($id, 'C') or starts-with($id, 'D') or starts-with($id, 'E')) )
+                then (doc('/db/sade-projects/' || $project || '/images.xml')//object[@type="image/jpeg"][@title = $id][last()]/substring-before(@uri, '.'))[last()]
+                else $id
     (: check if 301 could be send, comparing textgrid-metadata with if-modified-since :)
     (: this only works if local LANG is en :)
 (:

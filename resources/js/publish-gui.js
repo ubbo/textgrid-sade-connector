@@ -188,3 +188,7 @@ String.prototype.beginsWith = function (string) {
 function log(string) {
     $('#log').prepend(string + '<br/>');
 }
+function view(string) {
+    $('#view').prepend(string + '<br/>');
+}
+

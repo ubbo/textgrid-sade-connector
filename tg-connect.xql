@@ -7,6 +7,7 @@ import module namespace templates="http://exist-db.org/xquery/templates";
 import module namespace tgclient="http://textgrid.info/namespaces/xquery/tgclient" at "tgclient.xqm";
 import module namespace req="http://exquery.org/ns/request";
 import module namespace tgmenu="http://textgrid.info/namespaces/xquery/tgmenu" at "/db/apps/textgrid-connect/tgmenu.xqm";
+import module namespace console="http://exist-db.org/xquery/console";
 
 declare namespace rest="http://exquery.org/ns/restxq";
 declare namespace output="http://www.w3.org/2010/xslt-xquery-serialization";
@@ -99,7 +100,16 @@ function tgconnect:publish( $uri as xs:string,
                 for $pubUri in tgclient:getAggregatedUris($tguri, $rdfstoreUrl)
                     let $meta := tgclient:getMeta($pubUri, $sid, $tgcrudUrl),
                         $targetUri := concat(tgclient:remove-prefix($meta//tgmd:textgridUri/text()), ".xml"),
-                        $egal := xmldb:store(concat($targetPath, "/meta"), $targetUri, $meta, "text/xml")
+                        $egal := 
+                            if
+                                (starts-with($meta//tgmd:format/text(), "image")) 
+                            then 
+                                ()
+                            else
+                                xmldb:store(concat($targetPath, "/meta"), $targetUri, $meta, "text/xml"),
+                        $egal := (if (starts-with($meta//tgmd:format/string(), 'image') and (doc('/sade-projects/' || $project ||'/images.xml')//object/@uri) != $meta//tgmd:textgridUri/string() ) then (
+                            update insert <object type="{$meta//tgmd:format/string()}" uri="{$meta//tgmd:textgridUri/string()}" title="{$meta//tgmd:title/string()}"/> into doc('/sade-projects/' || $project ||'/images.xml')/navigation
+                                ) else 'nothing')
                     let $egal :=
                         if ($meta//tgmd:warning) then ()
                         else
@@ -113,7 +123,7 @@ function tgconnect:publish( $uri as xs:string,
                             return xmldb:store(concat($targetPath, "/data"), $targetUri, $data, "text/xml")
                         else if($meta//tgmd:format/text() eq "text/linkeditorlinkedfile") then
                             let $data := tgclient:getData($pubUri, $sid, $tgcrudUrl)
-                            return xmldb:store(concat($targetPath, "/tile"), $targetUri, $data, "text/xml")
+                            return tgconnect:store($targetPath, 'tile', $targetUri, $data)
                         else if($meta//tgmd:format/text() eq "text/tg.inputform+rdf+xml") then
                             let $data := tgclient:getData($pubUri, $sid, $tgcrudUrl)
                             return xmldb:store(concat($targetPath, "/rdf"), $targetUri, $data, "text/xml")
@@ -177,4 +187,10 @@ declare function tgconnect:buildstats($project as xs:string) {
     let $tmp := xmldb:store($path, 'stats.xml', $doc, 'text/xml')
     return ' stats: ok'
 
+};
+declare function tgconnect:store($targetPath, $type, $targetUri, $data){
+let $test := console:log(concat($targetPath, '/', $type, '/', $targetUri) || doc-available(concat($targetPath, '/', $type, '/', $targetUri)))
+return
+((if(doc-available(concat($targetPath, '/', $type, '/', $targetUri))) then xmldb:remove(concat($targetPath, '/', $type), $targetUri) else () ),
+xmldb:store(concat($targetPath, '/', $type), $targetUri, $data, "text/xml"))
 };

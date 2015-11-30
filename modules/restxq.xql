@@ -37,6 +37,7 @@ xquery version "3.0";
  : @author Wolfgang Meier <wolfgang@existsolutions.com>
  :)
 module namespace restxq="http://exist-db.org/xquery/restxq";
+import module namespace functx="http://www.functx.com";
 
 declare variable $restxq:NAMESPACE := "http://exquery.org/ns/restxq";
 (: 
@@ -268,15 +269,17 @@ declare %private function restxq:match-path($params as map(*), $input as xs:stri
     return
         if (matches($input, $regex)) then
             let $groupsRegex := "^" || replace($template, "\{\$([^\}]+)\}", "(.*)") || "$"
-            let $groups := subsequence(text:groups($input, $groupsRegex), 2)
+            let $groups := functx:get-matches($input, $groupsRegex)
             let $analyzed := analyze-string($template, "\{\$[^\}]+\}")
+            let $match := substring-after($input, 'textgrid/')
             return
                 map:new((
                     $params,
                     map-pairs(function($group, $varExpr) {
                         let $var := replace($varExpr, "\{\$([^\}]+)\}", "$1")
                         return
-                            map:entry($var, $group)
+                            map:entry('project', 'textgrid'),
+                            map:entry('id', $match)
                     }, $groups, $analyzed//fn:match)
                 ))
         else
