@@ -14,7 +14,10 @@ declare
     %rest:header-param("if-modified-since", "{$if-modified-since}")
 function digilib:proxy($project as xs:string, $id as xs:string*, $if-modified-since as xs:string*) {
     
-    let $query := request:get-query-string()
+    let $query := if(request:get-parameter-names() != ('dw', 'dh') )
+                (: add the mandatory parameter, when absent :)
+                    then request:get-query-string() || '&amp;dh=1500'
+                    else request:get-query-string()
     
     let $config := map { "config" := config:config($project) }
     let $data-dir := config:param-value($config, 'data-dir')
