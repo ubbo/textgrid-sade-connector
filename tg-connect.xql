@@ -101,8 +101,11 @@ function tgconnect:publish( $uri as xs:string,
                         $targetUri := concat(tgclient:remove-prefix($meta//tgmd:textgridUri/text()), ".xml"),
                         $egal := xmldb:store(concat($targetPath, "/meta"), $targetUri, $meta, "text/xml")
                     let $egal :=
-                        if ($meta//tgmd:warning) then ()
+                        (:
+                        since the warning metadate is used for different purposes,
+                        we should go back to try/catchif ($meta//tgmd:warning) then ()
                         else
+                         :)
                             if ($meta//tgmd:format[not(contains(base-uri(), $uri))]/text() eq "text/xml")
                                 then let $data :=    try {tgclient:getData($pubUri, $sid, $tgcrudUrl) }
                                                     catch * { <error>{concat($err:code, ": ", $err:description)}</error> }
