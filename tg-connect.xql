@@ -2,7 +2,6 @@ xquery version "3.0";
 
 module namespace tgconnect="http://textgrid.info/namespaces/xquery/tgconnect";
 
-import module namespace functx="http://www.functx.com";
 import module namespace templates="http://exist-db.org/xquery/templates";
 import module namespace tgclient="http://textgrid.info/namespaces/xquery/tgclient" at "tgclient.xqm";
 import module namespace req="http://exquery.org/ns/request";
