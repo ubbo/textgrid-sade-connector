@@ -6,6 +6,7 @@ import module namespace config="http://exist-db.org/xquery/apps/config" at "../S
 declare namespace sparql-results="http://www.w3.org/2005/sparql-results#";
 declare namespace http="http://expath.org/ns/http-client"; 
 declare namespace html="http://www.w3.org/1999/xhtml";
+declare namespace tgmd="http://textgrid.info/namespaces/metadata/core/2010";
 
 (:declare namespace config="http://bla"; :)
 
@@ -130,3 +131,52 @@ declare function tgclient:getSidCached($config as map(*)) as xs:string* {
         return $sid
     
 };
+
+(: 
+ : TextGrid CRUD
+ : Store nodes in the TextGrid Repository
+ : https://textgridlab.org/doc/services/submodules/tg-crud/docs/index.html#create
+ :  :)
+declare function tgclient:createData($config as map(*), $title, $format, $data) as node() {
+let $sessionId := tgclient:getSid($config)
+let $projectId := config:param-value($config, "textgrid.projectId")
+
+let $url := $tgcrudURL || "?sessionId=" || $sessionId || "&amp;projectId=" || $projectId
+
+let $objectMetadata :=    <ns3:tgObjectMetadata
+                            xmlns:ns3="http://textgrid.info/namespaces/metadata/core/2010"
+                            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                            xsi:schemaLocation="http://textgrid.info/namespaces/metadata/core/2010
+                            http://textgridlab.org/schema/textgrid-metadata_2010.xsd">
+                                  <ns3:object>
+                                     <ns3:generic>
+                                        <ns3:provided>
+                                           <ns3:title>{$title}</ns3:title>
+                                           <ns3:format>{$format}</ns3:format>
+                                        </ns3:provided>
+                                     </ns3:generic>
+                                     <ns3:item />
+                                  </ns3:object>
+      </ns3:tgObjectMetadata>
+
+let $objectData := $data
+
+let $request :=
+    <http:request method="POST" href="{$url}" http-version="1.0">
+        <http:multipart media-type="multipart/form-data" boundary="xYzBoundaryzYx">
+
+            <http:header name="Content-Disposition" value='form-data; name="tgObjectMetadata";'/>
+            <http:header name="Content-Type" value="text/xml"/>
+            <http:body media-type="application/xml">{$objectMetadata}</http:body>
+
+            <http:header name="Content-Disposition" value='form-data; name="tgObjectData";'/>
+            <http:header name="Content-Type" value="application/octet-stream"/>
+            <http:body media-type="{$format}">{$objectData}</http:body>
+
+        </http:multipart> 
+    </http:request>
+let $response := http:send-request($request)
+
+return
+    if( $response/@status = "200" ) then $response//tgmd:MetadataContainerType
+	else <error> <status>{$response/@status}</status> <message>{$response/@message}</message> </error>
