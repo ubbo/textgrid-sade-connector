@@ -140,24 +140,23 @@ declare function tgclient:getSidCached($config as map(*)) as xs:string* {
 declare function tgclient:createData($config as map(*), $title, $format, $data) as node() {
 let $sessionId := tgclient:getSid($config)
 let $projectId := config:param-value($config, "textgrid.projectId")
-
+let $tgcrudURL := config:param-value($config, "textgrid.tgcrud")
 let $url := $tgcrudURL || "?sessionId=" || $sessionId || "&amp;projectId=" || $projectId
 
-let $objectMetadata :=    <ns3:tgObjectMetadata
-                            xmlns:ns3="http://textgrid.info/namespaces/metadata/core/2010"
+let $objectMetadata :=    <tgmd:tgObjectMetadata
                             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                             xsi:schemaLocation="http://textgrid.info/namespaces/metadata/core/2010
                             http://textgridlab.org/schema/textgrid-metadata_2010.xsd">
-                                  <ns3:object>
-                                     <ns3:generic>
-                                        <ns3:provided>
-                                           <ns3:title>{$title}</ns3:title>
-                                           <ns3:format>{$format}</ns3:format>
-                                        </ns3:provided>
-                                     </ns3:generic>
-                                     <ns3:item />
-                                  </ns3:object>
-      </ns3:tgObjectMetadata>
+                                  <tgmd:object>
+                                     <tgmd:generic>
+                                        <tgmd:provided>
+                                           <tgmd:title>{$title}</tgmd:title>
+                                           <tgmd:format>{$format}</tgmd:format>
+                                        </tgmd:provided>
+                                     </tgmd:generic>
+                                     <tgmd:item />
+                                  </tgmd:object>
+      </tgmd:tgObjectMetadata>
 
 let $objectData := $data
 
@@ -180,3 +179,44 @@ let $response := http:send-request($request)
 return
     if( $response/@status = "200" ) then $response//tgmd:MetadataContainerType
 	else <error> <status>{$response/@status}</status> <message>{$response/@message}</message> </error>
+};
+
+declare function tgclient:publish($uri) {
+let $tgcrudURL := config:param-value($config, "textgrid.tgcrud")
+let $sessionId := tgclient:getSid($config)
+let $uri := if( matches($uri, '\.\d+$') ) then $uri else
+		let $metaFromBase := tgclient:getMeta($uri, $sessionId, $tgcrudURL)
+		return $metaFromBase//tgmd:textgridUri/string(.)
+
+let $url := ('https://textgridlab.org/1.0/tgpublish/' || $uri || '/publish?sid=' || $sessionId || "&amp;log=&amp;ignoreWarnings=TRUE&amp;dryRun=FALSE")
+let $persist := false()
+let $request-headers := <headers><http:header name="Connection" value="close"/></headers>
+let $data:= httpclient:get($url, $persist, $request-headers)
+return $data//httpclient:body/node()
+};
+
+declare function tgclient:publishStatus($uri) {
+let $uri := if( matches($uri, '\.\d+$') ) then $uri else $uri || ".0"
+
+let $url := 'https://textgridlab.org/1.0/tgpublish/' || $uri || '/status'
+let $persist := false()
+let $request-headers := <headers><http:header name="Connection" value="close"/></headers>
+let $data:= httpclient:get($url, $persist, $request-headers)
+
+let $processStatus := $data//httpclient:body//PublishStatus/string(@processStatus)
+
+return 
+    switch ($processStatus)
+        case "FINISHED" return true()
+        case "NOT_QUEUED" return let $retry := tgclient:publish($uri, $local:sid) return false()
+        default return false()
+};
+
+declare function tgclient:processStatus($uri, $interval) {
+   (: let $test := console:log( "get status for " || $uri || " will try again in " || $interval || "s." ) :)
+    return
+if( local:publishStatus($uri) = true() ) then true() else
+    let $sleep := util:wait( $interval * 1000)
+    return
+        tgclient:processStatus($uri, $interval)
+};
