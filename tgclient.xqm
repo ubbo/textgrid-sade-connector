@@ -138,7 +138,7 @@ declare function tgclient:getSidCached($config as map(*)) as xs:string* {
  : https://textgridlab.org/doc/services/submodules/tg-crud/docs/index.html#create
  :  :)
 declare function tgclient:createData($config as map(*), $title, $format, $data) as node() {
-let $sessionId := tgclient:getSid($config)
+let $sessionId := tgclient:getSidCached($config)
 let $projectId := config:param-value($config, "textgrid.projectId")
 let $tgcrudURL := config:param-value($config, "textgrid.tgcrud")
 let $url := $tgcrudURL || "?sessionId=" || $sessionId || "&amp;projectId=" || $projectId
@@ -183,7 +183,7 @@ return
 
 declare function tgclient:publish($uri) {
 let $tgcrudURL := config:param-value($config, "textgrid.tgcrud")
-let $sessionId := tgclient:getSid($config)
+let $sessionId := tgclient:getSidCached($config)
 let $uri := if( matches($uri, '\.\d+$') ) then $uri else
 		let $metaFromBase := tgclient:getMeta($uri, $sessionId, $tgcrudURL)
 		return $metaFromBase//tgmd:textgridUri/string(.)
@@ -208,12 +208,12 @@ let $processStatus := $data//httpclient:body//PublishStatus/string(@processStatu
 return 
     switch ($processStatus)
         case "FINISHED" return true()
-        case "NOT_QUEUED" return let $retry := tgclient:publish($uri, $local:sid) return false()
+        case "NOT_QUEUED" return let $retry := tgclient:publish($uri) return false()
         default return false()
 };
 
 declare function tgclient:processStatus($uri, $interval) {
-if( local:publishStatus($uri) = true() ) then true() else
+if( tgclient:publishStatus($uri) = true() ) then true() else
     let $sleep := util:wait( $interval * 1000)
     return
         tgclient:processStatus($uri, $interval)
