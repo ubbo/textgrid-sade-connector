@@ -213,8 +213,6 @@ return
 };
 
 declare function tgclient:processStatus($uri, $interval) {
-   (: let $test := console:log( "get status for " || $uri || " will try again in " || $interval || "s." ) :)
-    return
 if( local:publishStatus($uri) = true() ) then true() else
     let $sleep := util:wait( $interval * 1000)
     return
